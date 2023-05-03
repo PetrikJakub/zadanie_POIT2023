@@ -7,6 +7,7 @@ import time
 import configparser as ConfigParser
 import random
 import json
+import serial
 
 async_mode = None
 
@@ -27,6 +28,9 @@ socketio = SocketIO(app, async_mode=async_mode)
 thread = None
 thread_lock = Lock() 
 
+ser = serial.Serial(port='/dev/ttyACM0',baudrate=9600)
+# ser = serial.Serial(port='/dev/ttyACM0',baudrate=9600, timeout=.1)
+# print(ser.readline().decode().strip('\r\n'))
 
 def background_thread(args):
     count = 0  
@@ -34,6 +38,18 @@ def background_thread(args):
     dataList = []  
     db = MySQLdb.connect(host=myhost,user=myuser,passwd=mypasswd,db=mydb)          
     while True:
+        senzorData = ser.readline().decode().removesuffix("\r\n").split(",")
+
+        light = senzorData[0]
+        distance = 0
+        if (int(senzorData[1])> 300):
+            distance = '300'
+        
+        else:
+            distance = senzorData[1]
+        
+        # print(senzorData[0])
+        # print(senzorData[1])
         if args:
           A = dict(args).get('A')
           dbV = dict(args).get('db_value')
@@ -48,14 +64,13 @@ def background_thread(args):
         dataCounter +=1
         prem = random.random()
         x=time.time()
-        sinX=float(A)*math.sin(time.time())
-        cosX=float(A)*math.cos(time.time())
+        # sinX=float(A)*math.sin(time.time())
+        # cosX=float(A)*math.cos(time.time())
         if dbV == 'start':
           dataDict = {
             #"t": time.time(),
-            "x": x,
-            "sin": sinX,
-            "cos": cosX}
+            "light": light,
+            "distance": distance}
           dataList.append(dataDict)
         else:
           if len(dataList)>0:
@@ -73,7 +88,7 @@ def background_thread(args):
           dataList = []
           dataCounter = 0
         socketio.emit('my_response',
-                      {'data': json.dumps({"x":x, "sinX":sinX, "cosX": cosX}), 'count': count},
+                      {'data': json.dumps({"light":light, "distance":distance}), 'count': count},
                       namespace='/test')    
     db.close()
 
