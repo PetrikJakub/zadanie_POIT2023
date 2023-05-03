@@ -1,11 +1,59 @@
 <!DOCTYPE HTML>
 <html>
  <head>
-  <title>Flask-SocketIO Test</title>
-   <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
-   <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.5/socket.io.min.js"></script>
-   <script src="static/libs/plotly-latest.min.js"></script>
-   <script type="text/javascript" charset="utf-8">
+  <title>POIT 2023 Petrik</title>
+ 
+  <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.5/socket.io.min.js"></script>
+  <link rel="stylesheet" href="static/libs/jquery-ui.min.css">
+  <style>
+    table {
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-family: Arial, sans-serif;
+  width: 100%;
+  max-width: 800px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.1);
+}
+
+thead {
+  background-color: #222;
+  color: #fff;
+}
+
+th, td {
+  padding: 10px;
+  text-align: left;
+}
+
+th {
+  text-transform: uppercase;
+}
+
+tbody tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+tbody tr:hover {
+  background-color: #ddd;
+}
+
+@media screen and (max-width: 600px) {
+  table {
+    font-size: 12px;
+  }
+}
+  </style>
+  <script src="static/libs/plotly-latest.min.js"></script>
+  <script src="static/libs/jquery-3.2.1.min.js"></script>
+  <script src="static/libs/jquery-ui.min.js"></script>
+  <script src="static/libs/gauge.min.js"></script>
+ <script type="text/javascript" charset="utf-8">
+    $( function() {
+        $( "#tabs" ).tabs({
+          event: "mouseover"
+        });
+      } );
+
 
      $(document).ready(function() {
       var x = new Array();
@@ -51,23 +99,40 @@
           
 
 
-      socket.on('refresh_db_response', function(msg) {
-      //$('#database-data').append('Received').html();
-      $('#database-data').html("")
-      $('#database-data').append('<tr> <th>ID</th> <th>hodnoty</th> </tr>').html();
-        for(d of msg.data){
-          let id = d[0];
-          let values = d[1];
-          $('#database-data').append('<tr> <td>'+id+'</td> <td>'+values+'</td> </tr>').html();
-        }
-    })
+          socket.on('refresh_db_response', function(msg) {
+  $('#database-data').empty(); // clear existing data
+  $('#database-data').append(`
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Hodnoty</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${msg.data.map(d => `
+          <tr>
+            <td>${d[0]}</td>
+            <td>${d[1]}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `);
+});
 
+   
     $('form#graphIdForm').submit(function(event) {
           socket.emit('get_graph_values_by_id', {value: $('#requestedId').val()});
           return false; 
         });
 
+       
+
     socket.on('fetch-one', function(msg){
+     
+      $('#data-one').append('<h2>Hodnota:</h2>')
+      $('#data-one').append(msg.data)
       data = JSON.parse(msg.data[0]);
 
       console.log(data[0]);
@@ -122,30 +187,67 @@
     </script>
  </head>
  <body>
-  <h1>Flask-SocketIO Test</h1>
-  <h2>Send:</h2>
 
-  <form id="emit" method="POST" action='#'>
-    <input type="text" name="emit_value" id="emit_value" placeholder="Amplituda">
-    <input type="submit" value="Echo">
-  </form>
+  <div id="tabs">
+    <ul>
+      <li><a href="#tabs-1">Hodnoty</a></li>
+      <li><a href="#tabs-2">Graf nazivo</a></li>
+      <li><a href="#tabs-3">Analog nazivo</a></li>
+      <li><a href="#tabs-4">Graf z databazy</a></li>
+      <li><a href="#tabs-5">Graf zo suboru</a></li>
+    </ul>
+    <div id="tabs-1">
+      <h1>Flask-SocketIO Test</h1>
+      <h2>Send:</h2>
 
-  <button id="buttonVal" type="submit" value="start">Start</button>
-  <form id="disconnect" method="POST" action="#">
-    <input type="submit" value="Disconnect">
-  </form> 
+      <form id="emit" method="POST" action='#'>
+        <input type="text" name="emit_value" id="emit_value" placeholder="Amplituda">
+        <input type="submit" value="Echo">
+      </form>
 
-  <h2>Data z databazy</h2>
-  <table id="database-data"></table>
+      <button id="buttonVal" type="submit" value="start">Start</button>
+      <form id="disconnect" method="POST" action="#">
+        <input type="submit" value="Disconnect">
+      </form> 
+
+    </div>
 
 
-  <h2>Graf</h2>
+    <div id="tabs-2">
+
+    </div>
+
+
+    <div id="tabs-3">
+
+    </div>
+
+
+    <div id="tabs-4">
+      <h2>Data z databazy</h2>
+      <table id="database-data"></table>
+    
+    
+      <h2>Zadaj ID zaznamu pre zobrazenie grafu a vypisu:</h2>
+      
+      <form id="graphIdForm" method="GET" action='#'>
+        <input type="text" name="requestedId" id="requestedId" placeholder="vykreslované ID">
+        <input type="submit" value="vykresliť">
+      </form>
+      <div id="plotdiv" style="width:600px;height:250px;"></div>
+
+      
+      <div id="data-one">
+        
+      </div>
+      
+    </div>
+    <div id="tabs-5">
+      <p>Neviem ci bude kamarat</p>
+    </div>
+  </div>
+
   
-  <form id="graphIdForm" method="GET" action='#'>
-    <input type="text" name="requestedId" id="requestedId" placeholder="vykreslované ID">
-    <input type="submit" value="vykresliť">
-  </form>
   
-  <div id="plotdiv" style="width:600px;height:250px;"></div>
 
 </html>

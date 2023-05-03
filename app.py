@@ -139,6 +139,9 @@ def db_message(message):
          {'data': data})
 
 
+
+
+
 @socketio.on('get_graph_values_by_id', namespace='/test')
 def db_message(message):   
     session['db_value'] = message['value']  
