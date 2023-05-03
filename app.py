@@ -41,12 +41,7 @@ def background_thread(args):
         senzorData = ser.readline().decode().removesuffix("\r\n").split(",")
 
         light = senzorData[0]
-        distance = 0
-        if (int(senzorData[1])> 300):
-            distance = '300'
-        
-        else:
-            distance = senzorData[1]
+        distance = senzorData[1]
         
         # print(senzorData[0])
         # print(senzorData[1])
@@ -72,6 +67,9 @@ def background_thread(args):
             "light": light,
             "distance": distance}
           dataList.append(dataDict)
+          socketio.emit('my_response',
+                      {'data': json.dumps({"light":light, "distance":distance}), 'count': count},
+                      namespace='/test')  
         else:
           if len(dataList)>0:
             fuj = str(dataList).replace("'", "\"")
@@ -87,9 +85,7 @@ def background_thread(args):
             db.commit()
           dataList = []
           dataCounter = 0
-        socketio.emit('my_response',
-                      {'data': json.dumps({"light":light, "distance":distance}), 'count': count},
-                      namespace='/test')    
+          
     db.close()
 
 @app.route('/') 
