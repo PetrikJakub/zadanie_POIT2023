@@ -1,0 +1,147 @@
+<!DOCTYPE HTML>
+<html>
+ <head>
+  <title>Flask-SocketIO Test</title>
+   <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
+   <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.5/socket.io.min.js"></script>
+   <script src="static/libs/plotly-latest.min.js"></script>
+   <script type="text/javascript" charset="utf-8">
+
+     $(document).ready(function() {
+      var x = new Array();
+      var sinX = new Array();
+      var cosX = new Array();
+
+      var trace;
+      var layout;
+      
+      namespace = '/test';
+      var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+
+      socket.on('connect', function() {
+        socket.emit('my_event', {data: 'I\'m connected!', value: 1}); });
+
+      socket.on('my_response', function(msg) {
+        //console.log(msg.data);
+        $('#log').append('Received #'+msg.count+': '+msg.data+'<br>').html(); });
+
+      $('form#emit').submit(function(event) {
+          socket.emit('my_event', {value: $('#emit_value').val()});
+          return false; });
+
+          
+      $('#buttonVal').click(function(event) {
+          //console.log($('#buttonVal').val());
+          socket.emit('db_event', {value: $('#buttonVal').val()});
+          if ($(this).val() == "start") {
+            $(this).val("stop");
+            $(this).text("Stop");
+            //$('#database-data').append('Received').html();
+          }
+          else {
+            $(this).val("start");
+            $(this).text("Start");
+          }
+          return false; }); 
+
+      $('form#disconnect').submit(function(event) {
+          socket.emit('disconnect_request');
+          return false; });   
+          
+          
+
+
+      socket.on('refresh_db_response', function(msg) {
+      //$('#database-data').append('Received').html();
+      $('#database-data').html("")
+      $('#database-data').append('<tr> <th>ID</th> <th>hodnoty</th> </tr>').html();
+        for(d of msg.data){
+          let id = d[0];
+          let values = d[1];
+          $('#database-data').append('<tr> <td>'+id+'</td> <td>'+values+'</td> </tr>').html();
+        }
+    })
+
+    $('form#graphIdForm').submit(function(event) {
+          socket.emit('get_graph_values_by_id', {value: $('#requestedId').val()});
+          return false; 
+        });
+
+    socket.on('fetch-one', function(msg){
+      data = JSON.parse(msg.data[0]);
+
+      console.log(data[0]);
+      console.log(data[0]["x"]);
+//      $('#graph').html(msg.data[0])
+
+      x=[]
+      sinX=[]
+      cosX=[]
+      for (item of data){
+        x.push(item["x"]);
+        sinX.push(parseFloat(item["sin"]));
+        cosX.push(parseFloat(item["cos"]));
+      }
+
+
+//    x.push(parseFloat(msg.data));
+//     y.push(parseFloat(msg.data));
+      traceSin = {
+          x: x,
+          y: sinX,
+      };  
+      
+      traceCos = {
+          x: x,
+          y: cosX,
+      };  
+
+      layout = {
+        title: 'Data',
+        xaxis: {
+            title: 'x',
+        },
+        yaxis: {
+            title: 'y',
+            //range: [-1,1]
+        }
+      };
+      var traces = new Array();
+      traces.push(traceSin);
+      traces.push(traceCos);
+      Plotly.newPlot($('#plotdiv')[0], traces, layout); 
+      //addTraces               
+    })
+
+  });
+
+    </script>
+ </head>
+ <body>
+  <h1>Flask-SocketIO Test</h1>
+  <h2>Send:</h2>
+
+  <form id="emit" method="POST" action='#'>
+    <input type="text" name="emit_value" id="emit_value" placeholder="Amplituda">
+    <input type="submit" value="Echo">
+  </form>
+
+  <button id="buttonVal" type="submit" value="start">Start</button>
+  <form id="disconnect" method="POST" action="#">
+    <input type="submit" value="Disconnect">
+  </form> 
+
+  <h2>Data z databazy</h2>
+  <table id="database-data"></table>
+
+
+  <h2>Graf</h2>
+  
+  <form id="graphIdForm" method="GET" action='#'>
+    <input type="text" name="requestedId" id="requestedId" placeholder="vykreslované ID">
+    <input type="submit" value="vykresliť">
+  </form>
+  
+  <div id="plotdiv" style="width:600px;height:250px;"></div>
+
+</html>
