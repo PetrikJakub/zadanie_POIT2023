@@ -19,9 +19,11 @@
       cursor: pointer;
       font-size: 16px;
     }
-
+    #appContent{
+      display: none;
+    }
     #button2 {
-      background-color: #4bd3d3;
+      background-color: #b1542f;
     }
   </style>
     <script src="static/libs/plotly-latest.min.js"></script>
@@ -29,6 +31,7 @@
     <script src="static/libs/jquery-ui.min.js"></script>
     <script src="static/libs/gauge.min.js"></script>
     <script type="text/javascript" charset="utf-8">
+      $('#appContent').hide();
       graph_x = [];
       graph_light = [];
       graph_distance = [];
@@ -38,10 +41,23 @@
         event: "click"
       });
     });
-
+  
 
     $(document).ready(function () {
-           
+      $("#startButton").click(function() {
+        $("#appContent").toggle(); 
+        $(this).hide(); 
+      });
+      
+
+      $('form#disconnect').submit(function() {
+            event.preventDefault();
+            
+            $('#appContent').hide();
+
+            socket.disconnect();
+            return false; });   
+    
       var gaugeLight = new RadialGauge({
           renderTo: 'canvasID',
           width: 300,
@@ -119,13 +135,14 @@
       var trace;
       var layout;
 
+      
       namespace = '/test';
       var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
 
       socket.on('connect', function () {
         socket.emit('my_event', { data: 'I\'m connected!', value: 1 });
       });
-
+    
       let counter = 0
 
       socket.on('my_response', function (msg) {
@@ -278,14 +295,17 @@
         Plotly.newPlot($('#plotdiv')[0], traces, layout);
         //addTraces               
       })
-
+   
     });
+  
 
   </script>
   </head>
 
   <body>
 
+    <button id="startButton">Zapnut aplikaciu</button>
+    <div id="appContent">
     <div id="tabs">
       <ul>
         <li><a href="#tabs-1">Hodnoty</a></li>
@@ -297,9 +317,12 @@
       <div id="tabs-1">
         <h1>Pre nahranie a zobrazenie hodnot spusti tlacidlo Start.</h1>
         <button id="buttonVal" type="submit" value="start">Start</button>
-        <form id="disconnect" method="POST" action="#">
+        <!-- <form id="disconnect" method="POST" action="#">
           <input type="submit" id="button2" value="Disconnect">
-        </form>
+        </form> -->
+        <form id="disconnect" method="POST" action="#">
+          <button  id ="button2"type="submit" value="CLOSE" >Ukoncit aplikaciu </button>
+        </form> 
         <table>
           <thead>
             <tr>
@@ -359,7 +382,9 @@
       </div>
     </div>
 
+  </div>
 
-
+  
+</body>
 
   </html>
