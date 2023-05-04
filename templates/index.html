@@ -29,6 +29,10 @@
     <script src="static/libs/jquery-ui.min.js"></script>
     <script src="static/libs/gauge.min.js"></script>
     <script type="text/javascript" charset="utf-8">
+      graph_x = [];
+      graph_light = [];
+      graph_distance = [];
+
     $(function () {
       $("#tabs").tabs({
         event: "click"
@@ -37,6 +41,77 @@
 
 
     $(document).ready(function () {
+           
+      var gaugeLight = new RadialGauge({
+          renderTo: 'canvasID',
+          width: 300,
+          height: 300,
+          units: "%",
+          minValue: 0,
+          maxValue: 100,
+
+          minorTicks: 2,
+          strokeTicks: true,
+          highlights: [
+              {
+                  "from": 0,
+                  "to": 100,
+                  "color": "rgba(200, 50, 50, .75)"
+              }
+          ],
+          colorPlate: "#fff",
+          borderShadowWidth: 0,
+          borders: false,
+          needleType: "arrow",
+          needleWidth: 2,
+          needleCircleSize: 7,
+          needleCircleOuter: true,
+          needleCircleInner: false,
+          animationDuration: 1500,
+          animationRule: "linear"
+      });
+      gaugeLight.draw();
+      gaugeLight.value = "0";
+
+      var gaugeDistance = new RadialGauge({
+          renderTo: 'canvasID2',
+          width: 300,
+          height: 300,
+          units: "Cm",
+          minValue: 0,
+          maxValue: 300,
+          majorTicks: [
+              "0",
+              "50",
+              "100",
+              "150",
+              "200",
+              "250",
+              "300"
+          ],
+          minorTicks: 2,
+          strokeTicks: true,
+          highlights: [
+              {
+                  "from": 0,
+                  "to": 300,
+                  "color": "rgba(45, 200, 50, .75)"
+              }
+          ],
+          colorPlate: "#fff",
+          borderShadowWidth: 0,
+          borders: false,
+          needleType: "arrow",
+          needleWidth: 2,
+          needleCircleSize: 7,
+          needleCircleOuter: true,
+          needleCircleInner: false,
+          animationDuration: 1500,
+          animationRule: "linear"
+      });
+      gaugeDistance.draw();
+      gaugeDistance.value = "0";
+
       var x = new Array();
       var sinX = new Array();
       var cosX = new Array();
@@ -51,11 +126,43 @@
         socket.emit('my_event', { data: 'I\'m connected!', value: 1 });
       });
 
+      let counter = 0
+
       socket.on('my_response', function (msg) {
-        //console.log(msg.data);
-        // $('#table_live').append('Received #'+msg.count+': '+msg.data+'<br>').html(); });
+        
+
+        let graph_data = data = JSON.parse(msg.data);
+        graph_x.push(counter);
+        graph_light.push(parseFloat(data.light))
+        graph_distance.push(parseFloat(data.distance))
+        
+        let traceLight = {
+            x: graph_x,
+            y: graph_light,
+            name: "light" };   
+
+        let traceDistance = {
+            x: graph_x,
+            y: graph_distance,
+            name: "distance"
+            };   
+
+        
+        
+        var graph_live_traces = new Array();
+        graph_live_traces.push(traceLight);
+        graph_live_traces.push(traceDistance);
+        Plotly.newPlot($('#graph-live')[0], graph_live_traces,layout); 
+        counter++;
+
+        gaugeLight.value = data.light;  
+
+        gaugeDistance.value = data.distance;  
+
+        
         $('#table_live').append('<tr>' + '<td>' + msg.count + '</td>' + '<td>' + msg.data + '</td>' + '<td>' + '</tr>').html();
-      });
+      
+        });
 
 
 
@@ -219,29 +326,33 @@
 
 
       <div id="tabs-3">
+        <div>
+          <h2>Svetlost</h2>
+        <canvas id="canvasID"></canvas>
+        </div>
+        <div>
+          <h2>Vzdialenost</h2>
+        <canvas id="canvasID2"></canvas>
 
+        </div>
+        
       </div>
 
 
       <div id="tabs-4">
-        <h2>Data z databazy</h2>
-        <table id="database-data"></table>
-
-
         <h2>Zadaj ID zaznamu pre zobrazenie grafu a vypisu:</h2>
-
-        <form id="graphIdForm" method="GET" action='#'>
-          <input type="text" name="requestedId" id="requestedId"
-            placeholder="vykreslované ID">
-          <input type="submit" value="vykresliť">
-        </form>
+          <form id="graphIdForm" method="GET" action='#'>
+            <input type="text" name="requestedId" id="requestedId"
+              placeholder="vykreslované ID">
+            <input type="submit" value="vykresliť">
+          </form>
         <div id="plotdiv" style="width:600px;height:250px;"></div>
-
-
         <div id="data-one">
+          
 
         </div>
-
+        <h2>Data z databazy</h2>
+        <table id="database-data"></table>
       </div>
       <div id="tabs-5">
         <p>Neviem ci bude kamarat</p>
